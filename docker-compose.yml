@@ -1,1 +1,66 @@
+version: "3.9"
 
+services:
+  g11-proxy:
+    image: nginx:alpine
+    container_name: g11-proxy
+    ports:
+      - "8080:80"    # HTTP desde Hornet
+      - "8443:443"   # HTTPS desde Hornet
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/certbot/www:/var/www/certbot
+      - ./nginx/certbot/conf:/etc/letsencrypt
+    networks:
+      - proyecto     # red externa
+      - backend      # red interna -> moodle/wordpress/app
+
+  mariadb:
+    image: mariadb:11
+    container_name: mariadb
+    environment:
+      - MYSQL_ROOT_PASSWORD=cc5308
+      - MYSQL_DATABASE=dummy
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d
+    networks:
+      - backend
+
+  moodle:
+    image: bitnami/moodle:4.5.0
+    container_name: moodle
+    environment:
+      - MOODLE_DATABASE_HOST=mariadb
+      - MOODLE_DATABASE_PORT_NUMBER=3306
+      - MOODLE_DATABASE_NAME=moodle_db
+      - MOODLE_DATABASE_USER=moodle_user
+      - MOODLE_DATABASE_PASSWORD=moodle_password
+
+      # usuario admin inicial de moodle
+      - MOODLE_USERNAME=admin
+      - MOODLE_PASSWORD=Admin123!
+      - MOODLE_SITE_NAME=Moodle CDGI
+
+      # cuando esté el proxy HTTPS:
+      # - MOODLE_HOST=cdgi.ifigueroap.cl
+      # - MOODLE_REVERSEPROXY=yes
+      # - MOODLE_SSLPROXY=yes
+    depends_on:
+      - mariadb
+    networks:
+      - backend
+    volumes:
+      - moodle_data:/bitnami/moodle
+      - moodledata_data:/bitnami/moodledata
+
+networks:
+  proyecto:
+    external: true
+  backend:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+  moodle_data:
+  moodledata_data:
