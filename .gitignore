@@ -1,0 +1,16 @@
+# Docker y runtime
+*.log
+*.pid
+tmp/
+*.swp
+
+# Certificados y sensibles
+nginx/certbot/conf/
+nginx/certbot/www/
+
+# Variables de entorno
+.env
+
+# Volúmenes locales
+moodledata/
+mariadb_data/
